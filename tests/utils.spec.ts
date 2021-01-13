@@ -1,4 +1,4 @@
-import { randomHexString, generateQrDataUrl } from '../src/utils';
+import { randomHexString, generateQrDataUrl } from '../src/functions/utils';
 
 describe('randomHexString', () => {
   it('should return 16 length random string', async () => {

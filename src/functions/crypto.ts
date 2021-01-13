@@ -1,5 +1,4 @@
 import * as forge from 'node-forge';
-import * as bc from 'bcrypt';
 
 export const generateSalt = (bytes = 128): string => {
   if (bytes <= 0) {
@@ -12,11 +11,11 @@ export const pbkdf2 = (password: string, salt: string, iterations: number, size:
   return forge.pkcs5.pbkdf2(password, salt, iterations, size);
 };
 
-export const sha = (value: string, alg: 'sha256' | 'sha512' = 'sha256') => {
-  const algorithm = alg === 'sha256' ? forge.md.sha256 : forge.md.sha512;
+export const sha = (value: string, alg: 'sha256' | 'sha1' = 'sha256') => {
+  const algorithm = alg === 'sha256' ? forge.md.sha256 : forge.md.sha1;
   const md = algorithm.create();
   md.update(value);
-  return md.digest().bytes();
+  return forge.util.bytesToHex(md.digest().bytes());
 };
 
 export const generateIv = (): string => {
@@ -49,12 +48,4 @@ export const aesDecrypt = (key: string, iv: string, data: string): string => {
   decipher.finish();
   decrypted += decipher.output.getBytes();
   return forge.util.createBuffer(decrypted, 'utf8').bytes();
-};
-
-export const bcrypt = (password: string, rounds: number) => {
-  return bc.hashSync(password, rounds);
-};
-
-export const bcryptCompare = (password: string, hash: string) => {
-  return bc.compareSync(password, hash);
 };

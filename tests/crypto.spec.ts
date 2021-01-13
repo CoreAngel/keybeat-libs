@@ -1,5 +1,14 @@
-import { aesDecrypt, aesEncrypt, bcrypt, bcryptCompare, generateIv, generateSalt, pbkdf2, sha } from '../src/crypto';
 import * as forge from 'node-forge';
+import {
+  aesDecrypt,
+  aesEncrypt,
+  bcrypt,
+  bcryptCompare,
+  generateIv,
+  generateSalt,
+  pbkdf2,
+  sha,
+} from '../src/functions/crypto';
 
 describe('generateSalt', () => {
   it('should return 128 bytes', async () => {
@@ -56,8 +65,8 @@ describe('sha', () => {
     const result1 = sha('value', 'sha256');
     const result2 = sha('value', 'sha256');
 
-    const result3 = sha('value', 'sha512');
-    const result4 = sha('value', 'sha512');
+    const result3 = sha('value', 'sha1');
+    const result4 = sha('value', 'sha1');
 
     expect(result1 === result2).toBe(true);
     expect(result3 === result4).toBe(true);
@@ -68,9 +77,9 @@ describe('sha', () => {
     expect(key.length).toBe(32);
   });
 
-  it('should return 64 bytes key', async () => {
-    const key = sha('value', 'sha512');
-    expect(key.length).toBe(64);
+  it('should return 40 bytes key', async () => {
+    const key = sha('value', 'sha1');
+    expect(key.length).toBe(40);
   });
 });
 

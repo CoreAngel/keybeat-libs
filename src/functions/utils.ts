@@ -14,5 +14,5 @@ export const generateQrDataUrl = async (uri: string): Promise<string> => {
   if (uri.length === 0) {
     throw 'Uri cannot be empty';
   }
-  return await qrcode.toDataURL(uri);
+  return qrcode.toDataURL(uri);
 };
