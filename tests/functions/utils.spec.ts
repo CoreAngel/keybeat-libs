@@ -1,4 +1,4 @@
-import { randomHexString, generateQrDataUrl } from '../src/functions/utils';
+import { randomHexString, generateQrDataUrl, toBase64, fromBase64 } from '../../src/functions/utils';
 
 describe('randomHexString', () => {
   it('should return 16 length random string', async () => {
@@ -43,5 +43,12 @@ describe('generateQrDataUrl', () => {
 
   it('should throw error cuz empty uri', async () => {
     await expect(generateQrDataUrl('')).rejects.toEqual('Uri cannot be empty');
+  });
+
+  it('should encode and decode base64', async () => {
+    const data = 'data to encode'
+    const encoded = toBase64(data)
+    const decoded = fromBase64(encoded)
+    await expect(decoded).toBe(data);
   });
 });

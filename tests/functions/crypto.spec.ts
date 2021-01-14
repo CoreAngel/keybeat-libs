@@ -13,7 +13,8 @@ import {
   pubKeyToPem,
   rsaDecrypt,
   rsaEncrypt,
-} from '../src/functions/crypto';
+} from '../../src/functions/crypto';
+import {fromBase64, toBase64 } from '../../src/functions/utils';
 
 describe('generateSalt', () => {
   it('should return 128 bytes', async () => {
