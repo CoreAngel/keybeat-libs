@@ -15,7 +15,7 @@ export const sha = (value: string, alg: 'sha256' | 'sha1' = 'sha256') => {
   const algorithm = alg === 'sha256' ? forge.md.sha256 : forge.md.sha1;
   const md = algorithm.create();
   md.update(value);
-  return forge.util.bytesToHex(md.digest().bytes());
+  return md.digest().bytes();
 };
 
 export const generateIv = (): string => {
@@ -49,3 +49,36 @@ export const aesDecrypt = (key: string, iv: string, data: string): string => {
   decrypted += decipher.output.getBytes();
   return forge.util.createBuffer(decrypted, 'utf8').bytes();
 };
+
+export const generateKeyPair = () => {
+  return forge.pki.rsa.generateKeyPair(2048)
+}
+
+export type PublicKey = forge.pki.rsa.PublicKey;
+export type PrivateKey = forge.pki.rsa.PrivateKey;
+
+export const pubKeyToPem = (key: PublicKey) => {
+  return forge.pki.publicKeyToPem(key);
+}
+
+export const prvKeyToPem = (key: PrivateKey) => {
+  return forge.pki.privateKeyToPem(key);
+}
+
+export const pubKeyFromPem = (key: string): PublicKey => {
+  return forge.pki.publicKeyFromPem(key);
+}
+
+export const prvKeyFromPem = (key: string): PrivateKey => {
+  return forge.pki.privateKeyFromPem(key);
+}
+
+export const rsaEncrypt = (value: string, key: PublicKey) => {
+  const encrypted = key.encrypt(value)
+  return forge.util.encode64(encrypted);
+}
+
+export const rsaDecrypt = (value: string, key: PrivateKey) => {
+  const encrypted = forge.util.decode64(value);
+  return key.decrypt(encrypted)
+}

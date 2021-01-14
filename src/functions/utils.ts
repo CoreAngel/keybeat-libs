@@ -16,3 +16,15 @@ export const generateQrDataUrl = async (uri: string): Promise<string> => {
   }
   return qrcode.toDataURL(uri);
 };
+
+export const toHex = async (data: string): Promise<string> => {
+  return util.bytesToHex(data);
+};
+
+export const toBase64 = (data: string) => {
+  return util.encode64(data)
+}
+
+export const fromBase64 = (data: string) => {
+  return util.decode64(data)
+}

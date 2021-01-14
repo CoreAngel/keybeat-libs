@@ -37,6 +37,11 @@ export default class PasswordGeneratorService {
 
   public generate = (size: number) => {
     const fragments = this.getFragments();
+
+    if (fragments.length === 0) {
+      throw 'Minimum one fragment must be selected'
+    }
+
     const fragmentsSize = fragments.length;
     const passwordArray = [];
 

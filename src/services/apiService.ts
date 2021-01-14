@@ -1,5 +1,6 @@
 import axios from 'axios';
 import TokenService from './tokenService';
+import { generateKeyPair, rsaEncrypt, PublicKey, pubKeyToPem, rsaDecrypt } from "../functions/crypto";
 
 interface RegisterType {
   name: string;
@@ -52,67 +53,88 @@ interface SynchronizeCredentialType {
 }
 
 export default class ApiService {
-  private static BASE_URL = 'https://key-beat.herokuapp.com';
+  // private static BASE_URL = 'https://key-beat.herokuapp.com';
+  private baseUrl: string;
   private tokenService: TokenService;
+  private encryptedKeys = generateKeyPair();
 
-  constructor(tokenService: TokenService) {
+  constructor(tokenService: TokenService, baseUrl: string, serverPublic: PublicKey) {
     this.tokenService = tokenService;
+    this.baseUrl = baseUrl;
+
+    axios.interceptors.request.use((config) => {
+      if (config.data === undefined) {
+        return config;
+      }
+
+      const jsonData = JSON.stringify({
+        ...config.data,
+        pubKey: pubKeyToPem(this.encryptedKeys.publicKey)
+      })
+      config.data = rsaEncrypt(jsonData, serverPublic);
+      return config;
+    })
+
+    axios.interceptors.response.use((response) => {
+      if (response.data === '') {
+        return response;
+      }
+
+      const decryptedData = rsaDecrypt(response.data, this.encryptedKeys.privateKey);
+      response.data = JSON.parse(decryptedData)
+      return response;
+    })
   }
 
   public register = (data: RegisterType) => {
-    return axios.post(`${ApiService.BASE_URL}/auth/register`, data);
+    return axios.post(`${this.baseUrl}/auth/register`, data);
   };
 
   public login = (data: LoginType) => {
-    return axios.post(`${ApiService.BASE_URL}/auth/login`, data);
+    return axios.post(`${this.baseUrl}/auth/login`, data);
   };
 
   public salt = (data: SaltType) => {
-    return axios.post(`${ApiService.BASE_URL}/auth/salt`, data);
+    return axios.post(`${this.baseUrl}/auth/salt`, data);
   };
 
   public resetPassword = (data: ResetPasswordType) => {
-    const token = this.tokenService.getToken();
-    return axios.patch(`${ApiService.BASE_URL}/auth/reset/password`, {
-      auth: token,
+    return axios.patch(`${this.baseUrl}/auth/reset/password`, {
+      auth: this.tokenService.getToken(),
       ...data,
     });
   };
 
   public reset2FA = (data: Reset2FAType) => {
-    return axios.patch(`${ApiService.BASE_URL}/auth/reset/2fa`, data);
+    return axios.patch(`${this.baseUrl}/auth/reset/2fa`, data);
   };
 
   public addCredential = (data: AddCredentialType[]) => {
-    const token = this.tokenService.getToken();
-    return axios.post(`${ApiService.BASE_URL}/credential`, {
-      auth: token,
+    return axios.post(`${this.baseUrl}/credential`, {
+      auth: this.tokenService.getToken(),
       items: data,
     });
   };
 
   public modifyCredential = (data: ModifyCredentialType[]) => {
-    const token = this.tokenService.getToken();
-    return axios.patch(`${ApiService.BASE_URL}/credential`, {
-      auth: token,
+    return axios.patch(`${this.baseUrl}/credential`, {
+      auth: this.tokenService.getToken(),
       items: data,
     });
   };
 
   public deleteCredential = (data: DeleteCredentialType[]) => {
-    const token = this.tokenService.getToken();
-    return axios.delete(`${ApiService.BASE_URL}/credential`, {
+    return axios.delete(`${this.baseUrl}/credential`, {
       data: {
-        auth: token,
+        auth: this.tokenService.getToken(),
         items: data,
       },
     });
   };
 
   public synchronizeCredential = (data: SynchronizeCredentialType[]) => {
-    const token = this.tokenService.getToken();
-    return axios.post(`${ApiService.BASE_URL}/credential/sync`, {
-      auth: token,
+    return axios.post(`${this.baseUrl}/credential/sync`, {
+      auth: this.tokenService.getToken(),
       ...data,
     });
   };
