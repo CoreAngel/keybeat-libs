@@ -18,20 +18,19 @@ export const sha = (value: string, alg: 'sha256' | 'sha1' = 'sha256') => {
   return md.digest().bytes();
 };
 
-export const generateIv = (): string => {
-  return forge.random.getBytesSync(16);
-};
-
-export const aesEncrypt = (key: string, iv: string, data: string): string => {
+export const aesEncrypt = (key: string, data: string): string => {
+  const iv = forge.random.getBytesSync(16);
   const cipher = forge.cipher.createCipher('AES-CBC', key);
   cipher.start({ iv });
   cipher.update(forge.util.createBuffer(data));
   cipher.finish();
-  return cipher.output.bytes();
+  return iv + cipher.output.bytes();
 };
 
-export const aesDecrypt = (key: string, iv: string, data: string): string => {
-  const encryptedBytes = forge.util.createBuffer(data).bytes();
+export const aesDecrypt = (key: string, data: string): string => {
+  const bytes = forge.util.createBuffer(data).bytes();
+  const iv = bytes.substr(0, 16);
+  const encryptedBytes = bytes.substr(16)
   const decipher = forge.cipher.createDecipher('AES-CBC', key);
   decipher.start({ iv });
 
