@@ -12,8 +12,5 @@ export default class CredentialEntity {
   public uuid?: string;
 
   @Column({ type: 'text' })
-  public iv: string;
-
-  @Column({ type: 'text' })
   public data: string;
 }

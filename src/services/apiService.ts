@@ -53,7 +53,6 @@ interface SynchronizeCredentialType {
 }
 
 export default class ApiService {
-  // private static BASE_URL = 'https://key-beat.herokuapp.com';
   private baseUrl: string;
   private tokenService: TokenService;
   private encryptedKeys = generateKeyPair();
@@ -77,6 +76,10 @@ export default class ApiService {
 
     axios.interceptors.response.use((response) => {
       if (response.data === '') {
+        return response;
+      }
+
+      if (response.status === 406) {
         return response;
       }
 
