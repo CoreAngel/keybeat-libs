@@ -1,14 +1,14 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('Credential')
+@Entity('Credentials')
 export default class CredentialEntity {
-  @PrimaryGeneratedColumn({ type: 'int' })
-  public id?: number;
+  @PrimaryGeneratedColumn('uuid')
+  public id?: string;
 
   @Column({ type: 'int' })
   public userId: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   public uuid?: string;
 
   @Column({ type: 'text' })

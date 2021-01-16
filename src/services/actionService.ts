@@ -36,11 +36,15 @@ export default class ActionService {
     await this.deleteActions(userId, ActionType.DELETED);
   };
 
+  public deleteUserActions = async (userId: number) => {
+    await this.repository.delete({ userId });
+  };
+
   private findActions = async (userId: number, type: ActionType) => {
     return this.repository.find({ userId, type });
   };
 
   private deleteActions = async (userId: number, type: ActionType) => {
-    await this.repository.find({ userId, type });
+    await this.repository.delete({ userId, type });
   };
 }

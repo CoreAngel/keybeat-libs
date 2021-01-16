@@ -1,14 +1,15 @@
 import * as forge from 'node-forge';
+import { toHex } from './utils';
 
 export const generateSalt = (bytes = 128): string => {
   if (bytes <= 0) {
     throw 'Bytes must be number more than 0';
   }
-  return forge.random.getBytesSync(bytes);
+  return toHex(forge.random.getBytesSync(bytes));
 };
 
 export const pbkdf2 = (password: string, salt: string, iterations: number, size: number) => {
-  return forge.pkcs5.pbkdf2(password, salt, iterations, size);
+  return toHex(forge.pkcs5.pbkdf2(password, salt, iterations, size));
 };
 
 export const sha = (value: string, alg: 'sha256' | 'sha1' = 'sha256') => {
@@ -30,7 +31,7 @@ export const aesEncrypt = (key: string, data: string): string => {
 export const aesDecrypt = (key: string, data: string): string => {
   const bytes = forge.util.createBuffer(data).bytes();
   const iv = bytes.substr(0, 16);
-  const encryptedBytes = bytes.substr(16)
+  const encryptedBytes = bytes.substr(16);
   const decipher = forge.cipher.createDecipher('AES-CBC', key);
   decipher.start({ iv });
 
@@ -50,34 +51,34 @@ export const aesDecrypt = (key: string, data: string): string => {
 };
 
 export const generateKeyPair = () => {
-  return forge.pki.rsa.generateKeyPair(2048)
-}
+  return forge.pki.rsa.generateKeyPair(2048);
+};
 
 export type PublicKey = forge.pki.rsa.PublicKey;
 export type PrivateKey = forge.pki.rsa.PrivateKey;
 
 export const pubKeyToPem = (key: PublicKey) => {
   return forge.pki.publicKeyToPem(key);
-}
+};
 
 export const prvKeyToPem = (key: PrivateKey) => {
   return forge.pki.privateKeyToPem(key);
-}
+};
 
 export const pubKeyFromPem = (key: string): PublicKey => {
   return forge.pki.publicKeyFromPem(key);
-}
+};
 
 export const prvKeyFromPem = (key: string): PrivateKey => {
   return forge.pki.privateKeyFromPem(key);
-}
+};
 
 export const rsaEncrypt = (value: string, key: PublicKey) => {
-  const encrypted = key.encrypt(value)
+  const encrypted = key.encrypt(value);
   return forge.util.encode64(encrypted);
-}
+};
 
 export const rsaDecrypt = (value: string, key: PrivateKey) => {
   const encrypted = forge.util.decode64(value);
-  return key.decrypt(encrypted)
-}
+  return key.decrypt(encrypted);
+};

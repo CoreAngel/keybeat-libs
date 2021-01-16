@@ -14,8 +14,8 @@ export default class ActionEntity {
   @Column({ type: 'int' })
   public userId: number;
 
-  @Column({ type: 'int', nullable: true })
-  public credentialId?: number;
+  @Column({ type: 'text', nullable: true })
+  public credentialId?: string;
 
   @Column({ type: 'text', nullable: true })
   public credentialUuid?: string;

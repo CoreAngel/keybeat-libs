@@ -16,16 +16,33 @@ export default class CredentialService {
     return this.repository.find({ userId });
   };
 
-  public modifyCredential = async ({ id, data, iv }: CredentialEntity) => {
-    await this.repository.update({ id }, { data, iv });
+  public modifyCredential = async (id: string, data: string) => {
+    await this.repository.update({ id }, { data });
   };
 
-  public setUuid = async ({ id, uuid }: CredentialEntity) => {
+  public getCredential = async (id: string) => {
+    return this.repository.findOne({ id });
+  };
+
+  public createOrModifyCredential = async (userId: number, id: string, data: string) => {
+    const founded = await this.repository.findOne({ uuid: id });
+    if (founded) {
+      await this.repository.update({ id: founded.id }, { data });
+    } else {
+      await this.repository.save({ uuid: id, data, userId });
+    }
+  };
+
+  public setUuid = async (id: string, uuid: string) => {
     await this.repository.update({ id }, { uuid });
   };
 
-  public deleteCredential = async ({ id }: CredentialEntity) => {
+  public deleteCredentialById = async (id: string) => {
     await this.repository.delete({ id });
+  };
+
+  public deleteCredentialByUuid = async (uuid: string) => {
+    await this.repository.delete({ uuid });
   };
 
   public deleteCredentials = async (userId: number) => {

@@ -1,11 +1,15 @@
 import { random, util } from 'node-forge';
 import * as qrcode from 'qrcode';
 
-export const randomHexString = (length = 16): string => {
+export const randomBytes = (length = 16): string => {
   if (length <= 0) {
     throw 'Length must be number more than 0';
   }
-  const bytes = random.getBytes(length);
+  return random.getBytes(length);
+};
+
+export const randomHexString = (length = 16): string => {
+  const bytes = randomBytes(length);
   const buffer = util.createBuffer(bytes, 'raw');
   return buffer.toHex().substr(0, length);
 };
@@ -17,14 +21,18 @@ export const generateQrDataUrl = async (uri: string): Promise<string> => {
   return qrcode.toDataURL(uri);
 };
 
-export const toHex = async (data: string): Promise<string> => {
+export const toHex = (data: string): string => {
   return util.bytesToHex(data);
 };
 
+export const fromHex = (data: string): string => {
+  return util.hexToBytes(data);
+};
+
 export const toBase64 = (data: string) => {
-  return util.encode64(data)
-}
+  return util.encode64(data);
+};
 
 export const fromBase64 = (data: string) => {
-  return util.decode64(data)
-}
+  return util.decode64(data);
+};

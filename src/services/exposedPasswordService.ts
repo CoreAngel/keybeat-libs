@@ -1,10 +1,10 @@
 import axios from 'axios';
 import { sha } from '../functions/crypto';
-import {toHex} from "../functions/utils";
+import { toHex } from '../functions/utils';
 
 export default class ExposedPasswordService {
   public checkPassword = async (password: string): Promise<number> => {
-    const hash = await toHex(sha(password, 'sha1'));
+    const hash = toHex(sha(password, 'sha1'));
     const header = hash.slice(0, 5);
     const body = hash.slice(5);
 

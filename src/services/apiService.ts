@@ -1,6 +1,16 @@
-import axios from 'axios';
+import axios, { AxiosError, AxiosInstance, AxiosResponse } from 'axios';
 import TokenService from './tokenService';
-import { generateKeyPair, rsaEncrypt, PublicKey, pubKeyToPem, rsaDecrypt } from "../functions/crypto";
+import {
+  generateKeyPair,
+  rsaEncrypt,
+  PublicKey,
+  pubKeyToPem,
+  rsaDecrypt,
+  aesEncrypt,
+  aesDecrypt,
+} from '../functions/crypto';
+import { fromBase64, randomBytes, toBase64 } from '../functions/utils';
+import { extractServerErrors } from '../../../react/utils/errors';
 
 interface RegisterType {
   name: string;
@@ -32,14 +42,12 @@ interface Reset2FAType {
 }
 
 interface AddCredentialType {
-  id: number;
-  iv: string;
+  id: string;
   data: string;
 }
 
 interface ModifyCredentialType {
   id: string;
-  iv: string;
   data: string;
 }
 
@@ -53,6 +61,7 @@ interface SynchronizeCredentialType {
 }
 
 export default class ApiService {
+  private axiosInstance: AxiosInstance;
   private baseUrl: string;
   private tokenService: TokenService;
   private encryptedKeys = generateKeyPair();
@@ -60,74 +69,127 @@ export default class ApiService {
   constructor(tokenService: TokenService, baseUrl: string, serverPublic: PublicKey) {
     this.tokenService = tokenService;
     this.baseUrl = baseUrl;
+    this.axiosInstance = axios.create();
 
-    axios.interceptors.request.use((config) => {
+    this.axiosInstance.interceptors.request.use((config) => {
       if (config.data === undefined) {
         return config;
       }
 
       const jsonData = JSON.stringify({
         ...config.data,
-        pubKey: pubKeyToPem(this.encryptedKeys.publicKey)
-      })
-      config.data = rsaEncrypt(jsonData, serverPublic);
+        key: toBase64(pubKeyToPem(this.encryptedKeys.publicKey)),
+      });
+      const aesKey = randomBytes(32);
+      const data = aesEncrypt(aesKey, jsonData);
+      const key = rsaEncrypt(aesKey, serverPublic);
+      config.data = {
+        key,
+        data: toBase64(data),
+      };
       return config;
-    })
+    });
 
-    axios.interceptors.response.use((response) => {
-      if (response.data === '') {
-        return response;
+    const onFulfilled = (res: AxiosResponse) => {
+      console.log(res);
+      if (res.data === '') {
+        res.data = {
+          data: res.data,
+          errors: [],
+        };
+        return res;
       }
 
-      if (response.status === 406) {
-        return response;
+      const aesKey = rsaDecrypt(res.data.key, this.encryptedKeys.privateKey);
+      const decryptedData = aesDecrypt(aesKey, fromBase64(res.data.data));
+      console.log(decryptedData);
+      const data = decryptedData === '' ? {} : JSON.parse(decryptedData);
+      res.data = {
+        data,
+        errors: [],
+      };
+      return res;
+    };
+
+    const onRejected = (error: AxiosError) => {
+      const res = error.response;
+      console.log(error);
+      console.log(res);
+      if (res?.status === 406) {
+        res.data = {
+          data: {},
+          errors: extractServerErrors(res.data.message),
+        };
+        return res;
       }
 
-      const decryptedData = rsaDecrypt(response.data, this.encryptedKeys.privateKey);
-      response.data = JSON.parse(decryptedData)
-      return response;
-    })
+      if (!res || !res.data.key) {
+        return {
+          data: {
+            data: {},
+            errors: ['Request failed'],
+          },
+        };
+      }
+
+      const aesKey = rsaDecrypt(res.data.key, this.encryptedKeys.privateKey);
+      const decryptedData = aesDecrypt(aesKey, fromBase64(res.data.data));
+      const data = JSON.parse(decryptedData);
+      res.data = {
+        data: {},
+        errors: extractServerErrors(data.message),
+      };
+      return res;
+    };
+
+    this.axiosInstance.interceptors.response.use(onFulfilled, onRejected);
   }
 
   public register = (data: RegisterType) => {
-    return axios.post(`${this.baseUrl}/auth/register`, data);
+    return this.axiosInstance.post(`${this.baseUrl}/auth/register`, data);
   };
 
   public login = (data: LoginType) => {
-    return axios.post(`${this.baseUrl}/auth/login`, data);
+    return this.axiosInstance.post(`${this.baseUrl}/auth/login`, data);
+  };
+
+  public logout = () => {
+    return this.axiosInstance.post(`${this.baseUrl}/auth/logout`, {
+      auth: this.tokenService.getToken(),
+    });
   };
 
   public salt = (data: SaltType) => {
-    return axios.post(`${this.baseUrl}/auth/salt`, data);
+    return this.axiosInstance.post(`${this.baseUrl}/auth/salt`, data);
   };
 
   public resetPassword = (data: ResetPasswordType) => {
-    return axios.patch(`${this.baseUrl}/auth/reset/password`, {
+    return this.axiosInstance.patch(`${this.baseUrl}/auth/reset/password`, {
       auth: this.tokenService.getToken(),
       ...data,
     });
   };
 
   public reset2FA = (data: Reset2FAType) => {
-    return axios.patch(`${this.baseUrl}/auth/reset/2fa`, data);
+    return this.axiosInstance.patch(`${this.baseUrl}/auth/reset/2fa`, data);
   };
 
   public addCredential = (data: AddCredentialType[]) => {
-    return axios.post(`${this.baseUrl}/credential`, {
+    return this.axiosInstance.post(`${this.baseUrl}/credential`, {
       auth: this.tokenService.getToken(),
       items: data,
     });
   };
 
   public modifyCredential = (data: ModifyCredentialType[]) => {
-    return axios.patch(`${this.baseUrl}/credential`, {
+    return this.axiosInstance.patch(`${this.baseUrl}/credential`, {
       auth: this.tokenService.getToken(),
       items: data,
     });
   };
 
   public deleteCredential = (data: DeleteCredentialType[]) => {
-    return axios.delete(`${this.baseUrl}/credential`, {
+    return this.axiosInstance.delete(`${this.baseUrl}/credential`, {
       data: {
         auth: this.tokenService.getToken(),
         items: data,
@@ -135,8 +197,8 @@ export default class ApiService {
     });
   };
 
-  public synchronizeCredential = (data: SynchronizeCredentialType[]) => {
-    return axios.post(`${this.baseUrl}/credential/sync`, {
+  public synchronizeCredential = (data: SynchronizeCredentialType) => {
+    return this.axiosInstance.post(`${this.baseUrl}/credential/sync`, {
       auth: this.tokenService.getToken(),
       ...data,
     });
