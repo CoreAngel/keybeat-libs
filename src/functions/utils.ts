@@ -36,3 +36,10 @@ export const toBase64 = (data: string) => {
 export const fromBase64 = (data: string) => {
   return util.decode64(data);
 };
+
+export const extractServerErrors = (val: string | string[]) => {
+  if (typeof val === 'string') {
+    return [val];
+  }
+  return [...val];
+};

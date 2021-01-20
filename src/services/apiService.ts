@@ -9,8 +9,7 @@ import {
   aesEncrypt,
   aesDecrypt,
 } from '../functions/crypto';
-import { fromBase64, randomBytes, toBase64 } from '../functions/utils';
-import { extractServerErrors } from '../../../react/utils/errors';
+import { fromBase64, randomBytes, toBase64, extractServerErrors } from '../functions/utils';
 
 interface RegisterType {
   name: string;
